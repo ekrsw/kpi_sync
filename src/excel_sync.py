@@ -102,34 +102,17 @@ class SynchronizedExcelProcessor:
                         logger.info(f"{file_path}の同期中にエラーが発生しました（{retries}回目）: {e}")
 
                         if retries >= self.max_retries:
-                            try:
-                                excel.Quit()
-                                logger.info("Excelアプリケーションを終了しました。")
-                            except Exception as quit_e:
-                                logger.warning(f"Excelの終了中にエラーが発生しました。: {e}")
-                            
-                            # 次のファイルの処理のためにExcelを再起動
-                            excel = self._create_excel_app()
+                            logger.error(f"{file_path}の同期に失敗しました。最大リトライ回数に達しました。")
                         else:
                             logger.info(f"{file_path}の同期を再試行します。")
                             time.sleep(self.retry_delay) # 次回のリトライまで待機
             
-                # 全てのファイル処理が完了した後、Excelを終了
-                try:
-                    excel.Quit()
-                    logger.info("Excelアプリケーションを終了しました。")
-                except Exception as quit_e:
-                    logger.warning(f"Excelの終了中にエラーが発生しました。: {quit_e}")
-                
-                # 次のファイルの処理のためにExcelを再起動
-                excel = self._create_excel_app()
-
             # 全てのファイル処理が完了した後、Excelを終了
             try:
                 excel.Quit()
-                logger.info("Excelアプリケーションを終了します。")
-            except Exception as e:
-                logger.warning(f"Excelの終了中にエラーが発生しました: {e}")
+                logger.info("Excelアプリケーションを終了しました。")
+            except Exception as quit_e:
+                logger.warning(f"Excelの終了中にエラーが発生しました。: {quit_e}")
 
         except Exception as e:
             logger.error(f"同期処理中に予期しないエラーが発生しました。{e}")
