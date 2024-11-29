@@ -25,3 +25,14 @@ EXCEL_FILES = [ACTIVITY_FILE, CLOSE_FILE, SUPPORT_FILE]
 SYNC_MAX_RETRIES = 5  # 同期失敗時の最大リトライ回数
 SYNC_RETRY_DELAY = 2  # リトライ間の待機時間（秒）
 REFRESH_INTERVAL = 5  # 更新が完了するまで待機する時間（秒）
+
+# CTStageレポーター関係設定
+REPORTER_URL = os.getenv('REPORTER_URL')
+REPORTER_ID = os.getenv('REPORTER_ID')
+HEADLESS_MODE = False
+RETRY_COUNT = 3
+DELAY = 3
+TEMPLATE_SS = ['パブリック', '対応状況集計表用-SS']
+TEMPLATE_TVS = ['パブリック', '対応状況集計表用-TVS']
+TEMPLATE_KMN = ['パブリック', '対応状況集計表用-顧問先']
+TEMPLATE_HHD = ['パブリック', '対応状況集計表用-HHD']
