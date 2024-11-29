@@ -1,0 +1,1 @@
+LOG_FILE = "kpi_sync.log"

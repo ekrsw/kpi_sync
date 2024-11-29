@@ -1,0 +1,14 @@
+# Pythonのバイトコード
+__pycache__/
+*.pyc
+
+# 環境変数ファイル
+.env
+
+# 仮想環境フォルダー
+venv/
+
+# Excelファイルを除外
+data/TS_todays_activity.xlsx
+data/TS_todays_close.xlsx
+data/TS_todays_support.xlsx
