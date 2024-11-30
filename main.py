@@ -8,7 +8,7 @@ LOG_FILE = settings.LOG_FILE
 def setup_logging(log_file):
     # ロギングの設定
     logging.basicConfig(
-        level=logging.INFO, # ログレベル
+        level=logging.DEBUG, # ログレベル
         format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
         handlers=[
             logging.FileHandler(log_file, mode='a', encoding='utf-8'),

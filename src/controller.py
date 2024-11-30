@@ -24,6 +24,7 @@ def process_controll():
         futures = []
 
         # Excelファイルの処理をタスクとして提出
+        logger.debug("Excelファイルの処理をタスクとして追加しています。")
         for file_path in excel_processor.file_paths:
             futures.append(
                 executor.submit(excel_processor.process_file, file_path, stop_event)
