@@ -36,7 +36,7 @@ def sync_process_controller():
         # scraping処理をタスクとして追加
         logger.debug("スクレイピングの処理をタスクとして追加しています。")
         futures.append(
-            executor.submit(scraper.test, settings.TEMPLATE_TVS, stop_event)
+            executor.submit(scraper.test, settings.TEMPLATES, stop_event)
         )
 
         try:

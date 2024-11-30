@@ -84,42 +84,12 @@ class Base:
             # テンプレート呼び出し
             logger.info(f"テンプレートを呼び出しています。: [{template}]")
             self.driver.find_element(By.ID, 'template-title-span').click()
-            el1 = self.driver.find_element(By.ID, 'download-open-range-select')
-            s1 = Select(el1)
-            s1.select_by_visible_text("パブリック")
             el2 = self.driver.find_element(By.ID, 'template-download-select')
             s2 = Select(el2)
             s2.select_by_value(template)
             self.driver.find_element(By.ID, 'template-creation-btn').click()
         except Exception as e:
             logger.error(f"テンプレートの呼び出しに失敗しました。: {e}")
-
-    def filter_by_date(self,
-                       start_date: datetime.date,
-                       end_date: datetime.date,
-                       element_id: str = 0) -> None:
-        """
-        日付で絞り込む
-
-        Parameters
-        ----------
-        start_date : datetime.date
-        end_date : datetime.date
-        element_id : str
-            選択するタブによって、"0" or "1"
-        """
-        try:
-            # 集計期間のfromをクリアしてfrom_dateを送信
-            self.driver.find_element(By.ID, f'panel-td-input-from-date-{element_id}').send_keys(Keys.CONTROL + 'a')
-            self.driver.find_element(By.ID, f'panel-td-input-from-date-{element_id}').send_keys(Keys.DELETE)
-            self.driver.find_element(By.ID, f'panel-td-input-from-date-{element_id}').send_keys(start_date.strftime('%Y/%m/%d'))
-
-            # 集計期間のtoをクリアしてto_dateを送信
-            self.driver.find_element(By.ID, f'panel-td-input-to-date-{element_id}').send_keys(Keys.CONTROL + 'a')
-            self.driver.find_element(By.ID, f'panel-td-input-to-date-{element_id}').send_keys(Keys.DELETE)
-            self.driver.find_element(By.ID, f'panel-td-input-to-date-{element_id}').send_keys(end_date.strftime('%Y/%m/%d'))
-        except Exception as e:
-            logger.error(f"集計期間の設定に失敗しました。 :{e}")
 
     def create_report(self, element_id: str = "0"):
         """
@@ -197,31 +167,40 @@ class Base:
 
 
 class Scraper(Base):
-    def test(self, template: str, stop_event):
+    def test(self, templates: List[str], stop_event):
         if stop_event.is_set():
             logger.info(f"スクレイピング処理が停止されました。")
-        
         try:
             self.create_driver()
             self.login()
-            self.call_template(template)
-            self.filter_by_date(datetime.date.today(), datetime.date.today(), element_id="0")
-            self.create_report(element_id="0")
-            time.sleep(2)
+            for template in templates:
+                retries = 0
+                while True:
+                    try:
+                        self.call_template(template)
+                        self.create_report(element_id="0")
+                        time.sleep(1)
 
-            df1 = self.create_dateframe('normal-list1-dummy-0')
+                        df1 = self.create_dateframe('normal-list1-dummy-0')
 
-            self.select_tabs(tab_element_id="2")
-            self.filter_by_date(datetime.date.today(), datetime.date.today(), element_id="1")
-            self.create_report(element_id="1")
-            time.sleep(2)
+                        self.select_tabs(tab_element_id="2")
+                        self.create_report(element_id="1")
+                        time.sleep(1)
 
-            df2 = self.create_dateframe('normal-list2-dummy-1')
+                        df2 = self.create_dateframe('normal-list2-dummy-1')
 
-            print(df1)
-            print(df2)
+                        print(df1)
+                        print(df2)
+                        break
 
+                    except Exception as e:
+                        retries += 1
+                        logger.error(f"{template}のスクレイピング中にエラーが発生しました({retries}回目)。: {e}")
+                        self.close_driver()
+                        self.create_driver()
+                        self.login()
+                        continue
         except Exception as e:
-            logger.error(f"エラーが発生しました。: {e}")
+            logger.error(f"スクレイピング中に予期しないエラーが発生しました。")
         finally:
             self.close_driver()
