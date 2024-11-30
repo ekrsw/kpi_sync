@@ -175,7 +175,7 @@ class Scraper(Base):
             self.login()
             for template in templates:
                 retries = 0
-                while True:
+                while retries < settings.REPORTER_MAX_RETRIES and not stop_event.is_set():
                     try:
                         self.call_template(template)
                         self.create_report(element_id="0")
@@ -199,8 +199,9 @@ class Scraper(Base):
                         self.close_driver()
                         self.create_driver()
                         self.login()
-                        continue
+                        
         except Exception as e:
             logger.error(f"スクレイピング中に予期しないエラーが発生しました。")
         finally:
             self.close_driver()
+            logger.debug("Web Driverを終了しました。")
