@@ -1,3 +1,4 @@
+import concurrent.futures
 import logging
 import os
 import pythoncom  # COM初期化に必要
@@ -15,7 +16,9 @@ class SynchronizedExcelProcessor:
     def __init__(self, file_paths: List[str],
                  max_retries: int = settings.SYNC_MAX_RETRIES,
                  retry_delay: int = settings.SYNC_RETRY_DELAY,
-                 refresh_interval: int = settings.REFRESH_INTERVAL) -> None:
+                 refresh_interval: int = settings.REFRESH_INTERVAL,
+                 max_workers: int = 5,
+                 stop_event=None) -> None:
         """
         Excelファイルの同期処理を管理するクラス。
 
@@ -29,13 +32,17 @@ class SynchronizedExcelProcessor:
             リトライ間の待機時間（秒、デフォルトは設定ファイルから）。
         refresh_interval : int, optional
             CalculationState を確認する際の待機時間（秒、デフォルトは設定ファイルから）。
+        max_workers : int, optional
+            同時に実行する最大スレッド数（デフォルトは5）。
         """
         self.file_paths = file_paths
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.refresh_interval = refresh_interval
-        self.thread = None
-        self.stop_event = threading.Event()
+        self.max_workers = max_workers
+        self.executor = None
+        self.futures = []
+        self.stop_event = stop_event or threading.Event()
 
     def start(self) -> None:
         """
@@ -43,18 +50,30 @@ class SynchronizedExcelProcessor:
 
         Starts the synchronization process in a separate thread.
         """
-        logger.info("Excel同期処理スレッドを開始しました。")
-        self.thread = threading.Thread(target=self._run, daemon=True)
-        logger.debug("同期処理スレッドを作成しました。")
-        self.thread.start()
+        logger.info("Excel同期処理を開始します。")
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers)
+        for file_path in self.file_paths:
+            future = self.executor.submit(self.process_file, file_path)
+            self.futures.append(future)
+        logger.debug("全てのファイルを同期処理に追加しました。")
 
-    def _run(self):
+    def process_file(self, file_path):
         """
-        同期処理を実行する内部メソッド。
+        個別のExcelファイルを処理します。
 
-        Manages the synchronization of Excel files, handling retries and exceptions.
+        Parameters
+        ----------
+        file_path : str
+            処理するExcelファイルのパス。
         """
-        logger.debug("_runメソッドが開始しました。")
+        logger.debug(f"{file_path}の処理を開始します。")
+        if self.stop_event.is_set():
+            logger.info(f"{file_path}の処理が停止されました。")
+            return
+        if not os.path.exists(file_path):
+            logger.warning(f"ファイルが存在しません。: {file_path}")
+            return
+        
         try:
             # COMライブラリを初期化
             pythoncom.CoInitializeEx(pythoncom.COINIT_APARTMENTTHREADED)
@@ -64,58 +83,37 @@ class SynchronizedExcelProcessor:
             excel = self._create_excel_app()
             logger.debug('Excelアプリケーションを作成しました。')
 
-            # 各ファイルパスに対して処理を実行
-            for file_path in self.file_paths:
+            logger.info(f"{file_path}の同期を開始します。")
+            retries = 0
 
-                # 停止イベントがセットされているか確認
-                if self.stop_event.is_set():
-                    logger.info("同期処理が停止されました。")
+            while retries < self.max_retries and not self.stop_event.is_set():
+                try:
+                    workbook = excel.Workbooks.Open(file_path)
+                    logger.debug("ワークブックを開きました。")
+                    workbook.RefreshAll()
+                    logger.debug("ワークブックを更新しています。")
+                    time.sleep(self.refresh_interval)
+                    workbook.Save()
+                    logger.debug("ワークブックを保存しました。")
+                    workbook.Close()
+                    logger.info(f"{file_path}の同期が完了しました。")
                     break
-                
-                # ファイルが存在するか確認
-                if not os.path.exists(file_path):
-                    logger.warning(f"ファイルが存在しません。: {file_path}")
-                    continue
-
-                logger.info(f"{file_path}の同期を開始します。")
-                retries = 0
-
-                while retries < self.max_retries:
-                    try:
-                        # ワークブックを開く
-                        workbook = excel.Workbooks.Open(file_path)
-
-                        # データの更新を実行
-                        logger.debug("ワークブックを同期しています。")
-                        workbook.RefreshAll()
-
-                        # 更新が完了するまで待機
-                        time.sleep(self.refresh_interval)
-
-                        # ワークブックを保存して閉じる
-                        workbook.Save()
-                        workbook.Close()
-                        logger.info(f"{file_path}の同期が完了しました。")
-                        break # 成功した場合にリトライループを抜ける
-                    except Exception as e:
-                        retries += 1
-                        logger.info(f"{file_path}の同期中にエラーが発生しました（{retries}回目）: {e}")
-
-                        if retries >= self.max_retries:
-                            logger.error(f"{file_path}の同期に失敗しました。最大リトライ回数に達しました。")
-                        else:
-                            logger.info(f"{file_path}の同期を再試行します。")
-                            time.sleep(self.retry_delay) # 次回のリトライまで待機
-            
-            # 全てのファイル処理が完了した後、Excelを終了
-            try:
-                excel.Quit()
-                logger.info("Excelアプリケーションを終了しました。")
-            except Exception as quit_e:
-                logger.warning(f"Excelの終了中にエラーが発生しました。: {quit_e}")
+                except Exception as e:
+                    retries += 1
+                    logger.info(f"{file_path}の同期中にエラーが発生しました。（{retries}回目）: {e}")
+                    if retries >= self.max_retries:
+                        logger.error(f"{file_path}の同期に失敗しました。最大リトライ回数に達しました。: {e}")
+                    else:
+                        logger.info(f"{file_path}の同期を再試行します。")
+                        time.sleep(self.retry_delay)
+                try:
+                    excel.Quit()
+                    logger.info("Excelアプリケーションを終了しました。")
+                except Exception as quit_e:
+                    logger.warning(f"Excelの終了中にエラーが発生しました。: {quit_e}")
 
         except Exception as e:
-            logger.error(f"同期処理中に予期しないエラーが発生しました。{e}")
+            logger.error(f"{file_path}の同期処理中に予期しないエラーが発生しました。{e}")
         finally:
             # COMライブラリを終了
             pythoncom.CoUninitialize()
@@ -142,7 +140,8 @@ class SynchronizedExcelProcessor:
 
         Stops the synchronization process.
         """
+        logger.info("同期処理を停止します。")
         self.stop_event.set()
-        if self.thread and self.thread.is_alive():
-            self.thread.join()
-            logger.info("Excel同期処理スレッドを停止しました。")
+        if self.executor:
+            self.executor.shutdown(wait=True)
+            logger.info("ThreadPoolExecutorをシャットダウンしました。")
