@@ -1,5 +1,5 @@
 import logging
-from src.excel_sync import SynchronizedExcelProcessor
+from src.controller import process_controll
 
 import settings
 
@@ -20,5 +20,4 @@ setup_logging(LOG_FILE)
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    processor = SynchronizedExcelProcessor(settings.EXCEL_FILES)
-    processor.start()
+    process_controll()

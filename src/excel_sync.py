@@ -16,9 +16,8 @@ class SynchronizedExcelProcessor:
     def __init__(self, file_paths: List[str],
                  max_retries: int = settings.SYNC_MAX_RETRIES,
                  retry_delay: int = settings.SYNC_RETRY_DELAY,
-                 refresh_interval: int = settings.REFRESH_INTERVAL,
-                 max_workers: int = 5,
-                 stop_event=None) -> None:
+                 refresh_interval: int = settings.REFRESH_INTERVAL
+                 ) -> None:
         """
         Excelファイルの同期処理を管理するクラス。
 
@@ -31,33 +30,14 @@ class SynchronizedExcelProcessor:
         retry_delay : float, optional
             リトライ間の待機時間（秒、デフォルトは設定ファイルから）。
         refresh_interval : int, optional
-            CalculationState を確認する際の待機時間（秒、デフォルトは設定ファイルから）。
-        max_workers : int, optional
-            同時に実行する最大スレッド数（デフォルトは5）。
+            CalculationState を確認する際の待機時間（秒、デフォルトは設定ファイルから）。。
         """
         self.file_paths = file_paths
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.refresh_interval = refresh_interval
-        self.max_workers = max_workers
-        self.executor = None
-        self.futures = []
-        self.stop_event = stop_event or threading.Event()
 
-    def start(self) -> None:
-        """
-        同期処理を別スレッドで開始します。
-
-        Starts the synchronization process in a separate thread.
-        """
-        logger.info("Excel同期処理を開始します。")
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers)
-        for file_path in self.file_paths:
-            future = self.executor.submit(self.process_file, file_path)
-            self.futures.append(future)
-        logger.debug("全てのファイルを同期処理に追加しました。")
-
-    def process_file(self, file_path):
+    def process_file(self, file_path, stop_event):
         """
         個別のExcelファイルを処理します。
 
@@ -67,7 +47,7 @@ class SynchronizedExcelProcessor:
             処理するExcelファイルのパス。
         """
         logger.debug(f"{file_path}の処理を開始します。")
-        if self.stop_event.is_set():
+        if stop_event.is_set():
             logger.info(f"{file_path}の処理が停止されました。")
             return
         if not os.path.exists(file_path):
@@ -86,7 +66,7 @@ class SynchronizedExcelProcessor:
             logger.info(f"{file_path}の同期を開始します。")
             retries = 0
 
-            while retries < self.max_retries and not self.stop_event.is_set():
+            while retries < self.max_retries and not stop_event.is_set():
                 try:
                     workbook = excel.Workbooks.Open(file_path)
                     logger.debug("ワークブックを開きました。")
@@ -134,14 +114,3 @@ class SynchronizedExcelProcessor:
         excel_app.DisplayAlerts = False
         return excel_app
     
-    def stop(self):
-        """
-        同期処理を停止します。
-
-        Stops the synchronization process.
-        """
-        logger.info("同期処理を停止します。")
-        self.stop_event.set()
-        if self.executor:
-            self.executor.shutdown(wait=True)
-            logger.info("ThreadPoolExecutorをシャットダウンしました。")
