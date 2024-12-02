@@ -37,6 +37,33 @@ class SynchronizedExcelProcessor:
         self.refresh_interval = refresh_interval
 
     def process_file(self, file_path, stop_event):
+        self._sync_file(file_path, stop_event)
+
+        if settings.ACTIVITY_FILE in file_path:
+            from .processors.activity_processor import ActivityProcessor
+            a = ActivityProcessor(file_path)
+            a.load_data()
+            a.process()
+            print("ACTIVITY!!!!!")
+            return a
+        elif settings.CLOSE_FILE in file_path:
+            print("CLOSE!!!!!")
+        elif settings.SUPPORT_FILE in file_path:
+            from .processors.support_processor import SupportProcessor
+            s = SupportProcessor(file_path)
+            s.load_data()
+            s.process()
+            print("SUPPORT!!!!!!")
+            print("TVS", s.direct_tvs)
+            print("SS", s.direct_ss)
+            print("顧問先", s.direct_kmn)
+            print("HHD", s.direct_hhd)
+            return s
+        else:
+            logger.error(f"ファイル名がPathに含まれていません。{file_path}")
+
+    
+    def _sync_file(self, file_path, stop_event):
         """
         個別のExcelファイルを処理します。
 
@@ -102,6 +129,8 @@ class SynchronizedExcelProcessor:
             # COMライブラリを終了
             pythoncom.CoUninitialize()
             logger.debug("COMライブラリを終了しました。")
+        
+        
     
     def _create_excel_app(self) -> win32com.client.CDispatch:
         """
