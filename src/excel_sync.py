@@ -37,28 +37,32 @@ class SynchronizedExcelProcessor:
         self.refresh_interval = refresh_interval
 
     def process_file(self, file_path, stop_event):
+        """
+        このクラスのメインのメソッド。
+        これを実行するだけ。
+        """
         self._sync_file(file_path, stop_event)
 
         if settings.ACTIVITY_FILE in file_path:
             from .processors.activity_processor import ActivityProcessor
-            a = ActivityProcessor(file_path)
-            a.load_data()
-            a.process()
+            activity = ActivityProcessor(file_path)
+            activity.load_data()
+            activity.process()
             print("ACTIVITY!!!!!")
-            return a
+            return activity
         elif settings.CLOSE_FILE in file_path:
             print("CLOSE!!!!!")
         elif settings.SUPPORT_FILE in file_path:
             from .processors.support_processor import SupportProcessor
-            s = SupportProcessor(file_path)
-            s.load_data()
-            s.process()
+            support = SupportProcessor(file_path)
+            support.load_data()
+            support.process()
             print("SUPPORT!!!!!!")
-            print("TVS", s.direct_tvs)
-            print("SS", s.direct_ss)
-            print("顧問先", s.direct_kmn)
-            print("HHD", s.direct_hhd)
-            return s
+            print("TVS", support.direct_tvs)
+            print("SS", support.direct_ss)
+            print("顧問先", support.direct_kmn)
+            print("HHD", support.direct_hhd)
+            return support
         else:
             logger.error(f"ファイル名がPathに含まれていません。{file_path}")
 
