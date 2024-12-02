@@ -189,8 +189,11 @@ class Scraper(Base):
 
                         df2 = self.create_dateframe('normal-list2-dummy-1')
 
-                        print(df1)
-                        print(df2)
+                        print("総着信数: ", df1.iloc[0, 0]) # 総着信数
+                        print("IVR応答前放棄呼数: ", df1.iloc[0, 1]) # IVR応答前放棄呼数
+                        print("IVR切断数: ", df1.iloc[0, 2]) # IVR切断数
+                        print("タイムアウト数: ", df2.iloc[0, 0]) # タイムアウト数
+                        print("ACD放棄呼数: ", df2.iloc[0, 1]) # ACD放棄呼数
                         break
 
                     except Exception as e:
