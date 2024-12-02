@@ -27,6 +27,7 @@ def sync_process_controller():
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = []
+        results = []
 
         # Excelファイルの処理をタスクとして追加
         logger.debug("Excelファイルの処理をタスクとして追加しています。")
@@ -44,6 +45,7 @@ def sync_process_controller():
         try:
             for future in as_completed(futures):
                 result = future.result()
+                results.append(result)
         except KeyboardInterrupt:
             logger.info("停止信号を受け取りました。全てのタスクを停止します。")
             stop_event.set()
@@ -52,3 +54,5 @@ def sync_process_controller():
             logger.error(f"エラーが発生しました。: {e}")
             stop_event.set()
         
+    for i in results:
+        print(type(i))

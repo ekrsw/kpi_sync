@@ -168,6 +168,7 @@ class Base:
 
 class Scraper(Base):
     def scrape_ctstage_report(self, templates: List[str], stop_event):
+        results = {}
         if stop_event.is_set():
             logger.info(f"スクレイピング処理が停止されました。")
         try:
@@ -189,11 +190,15 @@ class Scraper(Base):
 
                         df2 = self.create_dateframe('normal-list2-dummy-1')
 
-                        print("総着信数: ", df1.iloc[0, 0]) # 総着信数
-                        print("IVR応答前放棄呼数: ", df1.iloc[0, 1]) # IVR応答前放棄呼数
-                        print("IVR切断数: ", df1.iloc[0, 2]) # IVR切断数
-                        print("タイムアウト数: ", df2.iloc[0, 0]) # タイムアウト数
-                        print("ACD放棄呼数: ", df2.iloc[0, 1]) # ACD放棄呼数
+                        # 必要なデータを辞書に保存
+                        template_result = {
+                            "総着信数": int(df1.iloc[0, 0]),
+                            "IVR応答前放棄呼数": int(df1.iloc[0, 1]),
+                            "IVR切断数": int(df1.iloc[0, 2]),
+                            "タイムアウト数": int(df2.iloc[0, 0]),
+                            "ACD放棄呼数": int(df2.iloc[0, 1])
+                        }
+                        results[template] = template_result
                         break
 
                     except Exception as e:
@@ -202,9 +207,11 @@ class Scraper(Base):
                         self.close_driver()
                         self.create_driver()
                         self.login()
+            return results
                         
         except Exception as e:
             logger.error(f"スクレイピング中に予期しないエラーが発生しました。")
+            return results
         finally:
             self.close_driver()
             logger.debug("Web Driverを終了しました。")
