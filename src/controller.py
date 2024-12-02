@@ -22,6 +22,8 @@ def sync_process_controller():
     # scraper処理をここに書く
     scraper = Scraper()
 
+    # Excelが開いているかを確認して開いている場合はExcelを強制終了する。
+    SynchronizedExcelProcessor.check_and_close(settings.EXCEL_FILES)
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = []

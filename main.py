@@ -1,5 +1,6 @@
 import logging
 from src.controller import sync_process_controller
+import time
 
 import settings
 
@@ -20,4 +21,9 @@ setup_logging(LOG_FILE)
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
+    start = time.time()
     sync_process_controller()
+    end = time.time()
+    time_diff = end - start
+    logger.info(f"処理が正常に終了しました。（処理時間: {time_diff} 秒）")
+    print(f"処理時間: {time_diff}")

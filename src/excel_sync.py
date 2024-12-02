@@ -1,8 +1,7 @@
-import concurrent.futures
 import logging
+import openpyxl
 import os
 import pythoncom  # COM初期化に必要
-import threading
 import time
 from typing import List
 import win32com.client
@@ -83,14 +82,19 @@ class SynchronizedExcelProcessor:
                     logger.info(f"{file_path}の同期中にエラーが発生しました。（{retries}回目）: {e}")
                     if retries >= self.max_retries:
                         logger.error(f"{file_path}の同期に失敗しました。最大リトライ回数に達しました。: {e}")
+                        # リトライ回数を超えたのでwhileループを抜けます。
+                        break
+
                     else:
                         logger.info(f"{file_path}の同期を再試行します。")
                         time.sleep(self.retry_delay)
-                try:
-                    excel.Quit()
-                    logger.info("Excelアプリケーションを終了しました。")
-                except Exception as quit_e:
-                    logger.warning(f"Excelの終了中にエラーが発生しました。: {quit_e}")
+                    
+                    # Excelのクローズ処理を行います。
+                    self._close_app(excel)
+
+                    # 次の処理に備えてExcelアプリケーションを作成します。
+                    excel = self._create_excel_app()
+                    logger.info('Excelアプリケーションを作成しました。')
 
         except Exception as e:
             logger.error(f"{file_path}の同期処理中に予期しないエラーが発生しました。{e}")
@@ -113,4 +117,35 @@ class SynchronizedExcelProcessor:
         excel_app.Visible = False
         excel_app.DisplayAlerts = False
         return excel_app
+    
+    @staticmethod
+    def check_and_close(file_names):
+        for file_name in file_names:
+            try:
+                with open(file_name, "r+b"):
+                    logger.debug(f"{file_name}は閉じられています。")
+            except PermissionError:
+                logger.info(f"{file_name}は開かれています。")
+                try:
+                    os.system("taskkill /F /IM excel.exe")  # Excelプロセスを強制終了
+                    logger.info("Excelアプリケーションを強制終了しました。")
+                except Exception as e:
+                    logger.error(f"Excelを強制終了する際にエラーが発生しました: {e}")
+            except Exception as e:
+                logger.error(f"{file_name}の確認中にエラーが発生しました。Excelアプリケーションを強制終了します。: {e}")
+                try:
+                    os.system("taskkill /F /IM excel.exe")  # Excelプロセスを強制終了
+                    logger.info("Excelアプリケーションを強制終了しました。")
+                except Exception as e:
+                    logger.error(f"Excelを強制終了する際にエラーが発生しました: {e}")
+
+    def _close_app(self, excel) -> None:
+        """
+        Excelアプリケーションを終了するヘルパー関数。
+        """
+        try:
+            excel.Quit()
+            logger.info("Excelアプリケーションを終了しました。")
+        except Exception as quit_e:
+            logger.warning(f"Excelの終了中にエラーが発生しました。: {quit_e}")
     
