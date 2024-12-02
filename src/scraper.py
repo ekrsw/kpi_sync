@@ -167,7 +167,7 @@ class Base:
 
 
 class Scraper(Base):
-    def test(self, templates: List[str], stop_event):
+    def scrape_ctstage_report(self, templates: List[str], stop_event):
         if stop_event.is_set():
             logger.info(f"スクレイピング処理が停止されました。")
         try:

@@ -56,7 +56,7 @@ def sync_process_controller():
         # scraping処理をタスクとして追加
         logger.debug("スクレイピングの処理をタスクとして追加しています。")
         futures.append(
-            executor.submit(scraper.test, settings.TEMPLATES, stop_event)
+            executor.submit(scraper.scrape_ctstage_report, settings.TEMPLATES, stop_event)
         )
 
         try:
@@ -394,7 +394,7 @@ class Base:
 
 
 class Scraper(Base):
-    def test(self, templates: List[str], stop_event):
+    def scrape_ctstage_report(self, templates: List[str], stop_event):
         if stop_event.is_set():
             logger.info(f"スクレイピング処理が停止されました。")
         try:
