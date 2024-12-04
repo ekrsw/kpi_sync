@@ -5,11 +5,12 @@ import time
 import settings
 
 LOG_FILE = settings.LOG_FILE
+LOG_LEVEL = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
 
-def setup_logging(log_file):
+def setup_logging(log_file, log_level):
     # ロギングの設定
     logging.basicConfig(
-        level=logging.INFO, # ログレベル
+        level=log_level, # ログレベル
         format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
         handlers=[
             logging.FileHandler(log_file, mode='a', encoding='utf-8'),
@@ -17,7 +18,7 @@ def setup_logging(log_file):
         ]
     )
 
-setup_logging(LOG_FILE)
+setup_logging(LOG_FILE, LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
@@ -26,4 +27,3 @@ if __name__ == '__main__':
     end = time.time()
     time_diff = end - start
     logger.info(f"処理が正常に終了しました。（処理時間: {time_diff} 秒）")
-    print(f"処理時間: {time_diff}")

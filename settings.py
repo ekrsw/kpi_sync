@@ -7,8 +7,9 @@ load_dotenv()
 # ファイルパスのBaseの設定
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ログファイルのパス
+# ロギングの設定
 LOG_FILE = "kpi_sync.log"
+LOG_LEVEL = "INFO"
 
 # Excelファイルの名前とパス
 ACTIVITY_FILE_NAME = 'TS_todays_activity.xlsx'
