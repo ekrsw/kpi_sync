@@ -6,6 +6,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+TOWENTY_MINUTES = settings.SERIAL_20_MINUTES
+THIRTY_MINUTES = settings.SERIAL_30_MINUTES
+FORTY_MINUTES = settings.SERIAL_40_MINUTES
+SIXTY_MINUTES = settings.SERIAL_60_MINUTES
+
 class ActivityProcessor(BaseProcessor):
     def process(self):
         """
@@ -60,36 +65,123 @@ class ActivityProcessor(BaseProcessor):
             logger.error(f"活動データのフィルタリング、整形中にエラーが発生しました。: {e}")
             raise
         
+        wfc_result = self.waiting_for_callback(start_date, end_date)
+        result.update(wfc_result)
         logger.debug(f"活動処理結果： {result}")
         return result
     
-    def group_activities_by_callback_duration(self, df):
-        towenty_minutes = settings.SERIAL_20_MINUTES
-        thirty_minutes = settings.SERIAL_30_MINUTES
-        forty_minutes = settings.SERIAL_40_MINUTES
-        sixty_minutes = settings.SERIAL_60_MINUTES
+    def waiting_for_callback(self, start_date, end_date):
+        df = self.df.copy()
+        # 受付けタイプ「直受け」「折返し」「留守電」のみ残す
+        df = df[(df['受付タイプ (関連) (サポート案件)'] == '折返し') | (df['受付タイプ (関連) (サポート案件)'] == '留守電')]
 
-        cb_0_20 = df[(df['時間差'] <= towenty_minutes)].shape[0]
-        cb_20_30 = df[(df['時間差'] > towenty_minutes) & (df['時間差'] <= thirty_minutes)].shape[0]
-        cb_30_40 = df[(df['時間差'] > thirty_minutes) & (df['時間差'] <= forty_minutes)].shape[0]
-        cb_40_60 = df[(df['時間差'] > forty_minutes) & (df['時間差'] <= sixty_minutes) & (df['指標に含めない (関連) (サポート案件)'] == 'いいえ')].shape[0]
-        cb_60over = df[(df['時間差'] > sixty_minutes) & (df['指標に含めない (関連) (サポート案件)'] == 'いいえ')].shape[0]
-        cb_not_include =df[(df['時間差'] > sixty_minutes) & (df['指標に含めない (関連) (サポート案件)'] == 'はい')].shape[0]
+        # 指標に含めないが「いいえ」のもののみ残す
+        df = df[df['指標に含めない (関連) (サポート案件)'] == 'いいえ']
+
+        df = df[(df['顛末コード (関連) (サポート案件)'] == '対応中') | (df['顛末コード (関連) (サポート案件)'] == '対応待ち')]
+
+        # 件名に「【受付】」が含まれているもののみ残す。
+        df['件名'] = df['件名'].astype(str) 
+        contains_df = df[df['件名'] == '【受付】']
+        uncontains_df = df[df['件名'] != '【受付】']
+
+        only_contains_df = pd.merge(contains_df, uncontains_df, on='案件番号 (関連) (サポート案件)', how='outer', indicator=True)
+        result = only_contains_df[only_contains_df['_merge'] == 'left_only']
+        s = result['案件番号 (関連) (サポート案件)'].unique()
+        df = df[df['案件番号 (関連) (サポート案件)'].isin(s)]
+
+        # 案件番号、登録日時でソート
+        df.sort_values(by=['案件番号 (関連) (サポート案件)', '登録日時'], inplace=True)
+
+        # 同一案件番号の最初の活動のみ残して他は削除  
+        df.drop_duplicates(subset='案件番号 (関連) (サポート案件)', keep='first', inplace=True)
+        
+        # サポート案件の登録日時と、活動の登録日時をPandas Datetime型に変換して、差分を'お待たせ時間'カラムに格納、NaNは０変換
+        current_serial = self.current_time_to_serial()
+        df['お待たせ時間'] = (current_serial - df['登録日時 (関連) (サポート案件)'])
+
+        df = self.filtered_by_date_range(df, '登録日時 (関連) (サポート案件)', start_date, end_date)
+        df = df.reset_index(drop=True)
+
+        df_ss = df[(df['サポート区分 (関連) (サポート案件)'] == 'SS')]
+        df_tvs = df[(df['サポート区分 (関連) (サポート案件)'] == 'TVS')]
+        df_kmn = df[(df['サポート区分 (関連) (サポート案件)'] == '顧問先')]
+        df_hhd = df[(df['サポート区分 (関連) (サポート案件)'] == 'HHD')]
+
+        df_wfc_over20_ss, df_wfc_over30_ss, df_wfc_over40_ss, df_wfc_over60_ss = self.convert_to_pending_num(df_ss)
+        df_wfc_over20_tvs, df_wfc_over30_tvs, df_wfc_over40_tvs, df_wfc_over60_tvs = self.convert_to_pending_num(df_tvs)
+        df_wfc_over20_kmn, df_wfc_over30_kmn, df_wfc_over40_kmn, df_wfc_over60_kmn = self.convert_to_pending_num(df_kmn)
+        df_wfc_over20_hhd, df_wfc_over30_hhd, df_wfc_over40_hhd, df_wfc_over60_hhd = self.convert_to_pending_num(df_hhd)
+
+        wfc_over20_ss = self.create_wfc_list(df_wfc_over20_ss)
+        wfc_over30_ss = self.create_wfc_list(df_wfc_over30_ss)
+        wfc_over40_ss = self.create_wfc_list(df_wfc_over40_ss)
+        wfc_over60_ss = self.create_wfc_list(df_wfc_over60_ss)
+        
+        wfc_over20_tvs = self.create_wfc_list(df_wfc_over20_tvs)
+        wfc_over30_tvs = self.create_wfc_list(df_wfc_over30_tvs)
+        wfc_over40_tvs = self.create_wfc_list(df_wfc_over40_tvs)
+        wfc_over60_tvs = self.create_wfc_list(df_wfc_over60_tvs)
+
+        wfc_over20_kmn = self.create_wfc_list(df_wfc_over20_kmn)
+        wfc_over30_kmn = self.create_wfc_list(df_wfc_over30_kmn)
+        wfc_over40_kmn = self.create_wfc_list(df_wfc_over40_kmn)
+        wfc_over60_kmn = self.create_wfc_list(df_wfc_over60_kmn)
+
+        wfc_over20_hhd = self.create_wfc_list(df_wfc_over20_hhd)
+        wfc_over30_hhd = self.create_wfc_list(df_wfc_over30_hhd)
+        wfc_over40_hhd = self.create_wfc_list(df_wfc_over40_hhd)
+        wfc_over60_hhd = self.create_wfc_list(df_wfc_over60_hhd)
+
+        result = {
+            'wfc_over20_ss': wfc_over20_ss,
+            'wfc_over30_ss': wfc_over30_ss,
+            'wfc_over40_ss': wfc_over40_ss,
+            'wfc_over60_ss': wfc_over60_ss,
+            'wfc_over20_tvs': wfc_over20_tvs,
+            'wfc_over30_tvs': wfc_over30_tvs,
+            'wfc_over40_tvs': wfc_over40_tvs,
+            'wfc_over60_tvs': wfc_over60_tvs,
+            'wfc_over20_kmn': wfc_over20_kmn,
+            'wfc_over30_kmn': wfc_over30_kmn,
+            'wfc_over40_kmn': wfc_over40_kmn,
+            'wfc_over60_kmn': wfc_over60_kmn,
+            'wfc_over20_hhd': wfc_over20_hhd,
+            'wfc_over30_hhd': wfc_over30_hhd,
+            'wfc_over40_hhd': wfc_over40_hhd,
+            'wfc_over60_hhd': wfc_over60_hhd,
+        }
+        return result
+    
+    def group_activities_by_callback_duration(self, df):
+        cb_0_20 = df[(df['時間差'] <= TOWENTY_MINUTES)].shape[0]
+        cb_20_30 = df[(df['時間差'] > TOWENTY_MINUTES) & (df['時間差'] <= THIRTY_MINUTES)].shape[0]
+        cb_30_40 = df[(df['時間差'] > THIRTY_MINUTES) & (df['時間差'] <= FORTY_MINUTES)].shape[0]
+        cb_40_60 = df[(df['時間差'] > FORTY_MINUTES) & (df['時間差'] <= SIXTY_MINUTES) & (df['指標に含めない (関連) (サポート案件)'] == 'いいえ')].shape[0]
+        cb_60over = df[(df['時間差'] > SIXTY_MINUTES) & (df['指標に含めない (関連) (サポート案件)'] == 'いいえ')].shape[0]
+        cb_not_include =df[(df['時間差'] > SIXTY_MINUTES) & (df['指標に含めない (関連) (サポート案件)'] == 'はい')].shape[0]
 
         return cb_0_20, cb_20_30, cb_30_40, cb_40_60, cb_60over, cb_not_include
     
+    
+    
     def convert_to_pending_num(self, df):
-        towenty_minutes = 0.0138888888888889
-        thirty_minutes = 0.0208333333333333
-        forty_minutes = 0.0277777777777778
-        sixty_minutes = 0.0416666666666667
-
-        wfc_over_20 = self.create_wfc_list(df[df['お待たせ時間'] >= towenty_minutes])
-        wfc_over30 = self.create_wfc_list(df[df['お待たせ時間'] >= thirty_minutes])
-        wfc_over40 = self.create_wfc_list(df[df['お待たせ時間'] >= forty_minutes])
-        wfc_over60 = self.create_wfc_list(df[df['お待たせ時間'] >= sixty_minutes])
+        wfc_over_20 = df[df['お待たせ時間'] >= TOWENTY_MINUTES]
+        wfc_over30 = df[df['お待たせ時間'] >= THIRTY_MINUTES]
+        wfc_over40 = df[df['お待たせ時間'] >= FORTY_MINUTES]
+        wfc_over60 = df[df['お待たせ時間'] >= SIXTY_MINUTES]
 
         return wfc_over_20, wfc_over30, wfc_over40, wfc_over60
+    
+    def callback_classification_by_group(self, df):
+        df_cb_0_20 = df[(df['時間差'] <= TOWENTY_MINUTES)]
+        df_cb_20_30 = df[(df['時間差'] > TOWENTY_MINUTES) & (df['時間差'] <= THIRTY_MINUTES)]
+        df_cb_30_40 = df[(df['時間差'] > THIRTY_MINUTES) & (df['時間差'] <= FORTY_MINUTES)]
+        df_cb_40_60 = df[(df['時間差'] > FORTY_MINUTES) & (df['時間差'] <= SIXTY_MINUTES) & (df['指標に含めない (関連) (サポート案件)'] == 'いいえ')]
+        df_cb_60over = df[(df['時間差'] > SIXTY_MINUTES) & (df['指標に含めない (関連) (サポート案件)'] == 'いいえ')]
+        df_cb_not_include =df[(df['時間差'] > SIXTY_MINUTES) & (df['指標に含めない (関連) (サポート案件)'] == 'はい')]
+
+        return df_cb_0_20, df_cb_20_30, df_cb_30_40, df_cb_40_60, df_cb_60over, df_cb_not_include
     
     def create_wfc_list(self, df) -> str:
         _ = list(df.loc[:, '案件番号 (関連) (サポート案件)'])
