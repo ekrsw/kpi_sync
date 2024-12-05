@@ -11,6 +11,8 @@ class SupportProcessor(BaseProcessor):
         """
         Supportファイルのデータを指定された条件でフィルタリングおよび整形します。
         """
+        result = {}
+
         try:
             base_df = self.df.fillna('') # これを入れないとdf['かんたん！保守区分'] == ''が上手く判定されない
             
@@ -31,10 +33,10 @@ class SupportProcessor(BaseProcessor):
                 ]
             
             # グループ別に分割
-            self.direct_ss = df[df['サポート区分'] == 'SS'].shape[0]
-            self.direct_tvs = df[df['サポート区分'] == 'TVS'].shape[0]
-            self.direct_kmn = df[df['サポート区分'] == '顧問先'].shape[0]
-            self.direct_hhd = df[df['サポート区分'] == 'HHD'].shape[0]
+            result['direct_ss'] = df[df['サポート区分'] == 'SS'].shape[0]
+            result['direct_tvs'] = df[df['サポート区分'] == 'TVS'].shape[0]
+            result['direct_kmn'] = df[df['サポート区分'] == '顧問先'].shape[0]
+            result['direct_hhd'] = df[df['サポート区分'] == 'HHD'].shape[0]
 
             # 留守電数の検索条件
             df = base_df.copy()
@@ -44,10 +46,13 @@ class SupportProcessor(BaseProcessor):
                 ]
             
             # グループ別に分割
-            self.ivr_ss = df[df['サポート区分'] == 'SS'].shape[0]
-            self.ivr_tvs = df[df['サポート区分'] == 'TVS'].shape[0]
-            self.ivr_kmn = df[df['サポート区分'] == '顧問先'].shape[0]
-            self.ivr_hhd = df[df['サポート区分'] == 'HHD'].shape[0]
+            result['ivr_ss'] = df[df['サポート区分'] == 'SS'].shape[0]
+            result['ivr_tvs'] = df[df['サポート区分'] == 'TVS'].shape[0]
+            result['ivr_kmn'] = df[df['サポート区分'] == '顧問先'].shape[0]
+            result['ivr_hhd'] = df[df['サポート区分'] == 'HHD'].shape[0]
+
+            logger.debug(f"サポート案件処理結果: {result}")
+            return result
 
         except Exception as e:
             logger.error(f"直受け件数、留守電数の算定中にエラーが発生しました。: {e}")

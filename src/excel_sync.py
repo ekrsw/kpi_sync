@@ -26,7 +26,7 @@ class SynchronizedExcelProcessor:
             同期するExcelファイルのパスのリスト。
         max_retries : int, optional
             同期失敗時の最大リトライ回数（デフォルトは設定ファイルから）。
-        retry_delay : float, optional
+        retry_delay : int, optional
             リトライ間の待機時間（秒、デフォルトは設定ファイルから）。
         refresh_interval : int, optional
             CalculationState を確認する際の待機時間（秒、デフォルトは設定ファイルから）。。
@@ -47,22 +47,17 @@ class SynchronizedExcelProcessor:
             from .processors.activity_processor import ActivityProcessor
             activity = ActivityProcessor(file_path)
             activity.load_data()
-            activity.process()
-            print("ACTIVITY!!!!!")
-            return activity
+            result = activity.process()
+            return result
         elif settings.CLOSE_FILE in file_path:
-            print("CLOSE!!!!!")
+            result = {}
+            return result
         elif settings.SUPPORT_FILE in file_path:
             from .processors.support_processor import SupportProcessor
             support = SupportProcessor(file_path)
             support.load_data()
-            support.process()
-            print("SUPPORT!!!!!!")
-            print("TVS", support.direct_tvs)
-            print("SS", support.direct_ss)
-            print("顧問先", support.direct_kmn)
-            print("HHD", support.direct_hhd)
-            return support
+            result = support.process()
+            return result
         else:
             logger.error(f"ファイル名がPathに含まれていません。{file_path}")
 

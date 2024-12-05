@@ -27,7 +27,7 @@ def sync_process_controller():
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = []
-        results = []
+        results = {}
 
         # Excelファイルの処理をタスクとして追加
         logger.debug("Excelファイルの処理をタスクとして追加しています。")
@@ -45,7 +45,11 @@ def sync_process_controller():
         try:
             for future in as_completed(futures):
                 result = future.result()
-                results.append(result)
+                if isinstance(result, dict):
+                    results.update(result)
+                else:
+                    logger.error(f"処理結果が辞書型ではありません。: {result}")
+            return results
         except KeyboardInterrupt:
             logger.info("停止信号を受け取りました。全てのタスクを停止します。")
             stop_event.set()

@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     start = time.time()
-    sync_process_controller()
+    result = sync_process_controller()
+    print(result)
     end = time.time()
     time_diff = end - start
     logger.info(f"処理が正常に終了しました。（処理時間: {time_diff} 秒）")

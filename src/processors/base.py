@@ -59,6 +59,16 @@ class BaseProcessor:
         logger.debug(f"Filtered DataFrame from {start_date} to {end_date}: {filtered_df.shape[0]} rows")
         return filtered_df
     
+    def current_time_to_serial(self, base_date=datetime.datetime(1899, 12, 30)):
+        """
+        現在日時をシリアル値に変換する。
+
+        :return: シリアル値
+        """
+        current_time = datetime.datetime.now()
+        serial_value = (current_time - base_date).total_seconds() / (24 * 60 * 60)
+        return serial_value
+    
     @staticmethod
     def datetime_to_serial(dt: datetime.datetime, base_date=datetime.datetime(1899, 12, 30)) -> float:
         """

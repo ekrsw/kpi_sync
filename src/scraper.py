@@ -192,11 +192,11 @@ class Scraper(Base):
 
                         # 必要なデータを辞書に保存
                         template_result = {
-                            "総着信数": int(df1.iloc[0, 0]),
-                            "IVR応答前放棄呼数": int(df1.iloc[0, 1]),
-                            "IVR切断数": int(df1.iloc[0, 2]),
-                            "タイムアウト数": int(df2.iloc[0, 0]),
-                            "ACD放棄呼数": int(df2.iloc[0, 1])
+                            "total_calls": int(df1.iloc[0, 0]), # 総着信数
+                            "IVR_interruptions_before_response": int(df1.iloc[0, 1]), # IVR応答前放棄呼数
+                            "ivr_interruptions": int(df1.iloc[0, 2]), # IVR切断数
+                            "time_out": int(df2.iloc[0, 0]), # タイムアウト数
+                            "abandoned_during_operator": int(df2.iloc[0, 1]) # ACD放棄呼数
                         }
                         results[template] = template_result
                         break
