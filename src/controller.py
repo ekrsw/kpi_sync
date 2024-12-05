@@ -57,6 +57,3 @@ def sync_process_controller():
         except Exception as e:
             logger.error(f"エラーが発生しました。: {e}")
             stop_event.set()
-        
-    for i in results:
-        print(type(i))

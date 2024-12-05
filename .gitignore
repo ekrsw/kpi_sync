@@ -12,6 +12,7 @@ venv/
 data/TS_todays_activity.xlsx
 data/TS_todays_close.xlsx
 data/TS_todays_support.xlsx
+data/operators.xlsx
 
 # ログファイル
 kpi_sync.log

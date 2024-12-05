@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     start = time.time()
     result = sync_process_controller()
-    print(result)
+    print("総着信数", result['TEMPLATE_TVS']['total_calls'])
     end = time.time()
     time_diff = end - start
     logger.info(f"処理が正常に終了しました。（処理時間: {time_diff} 秒）")
