@@ -3,6 +3,7 @@ import logging
 import threading
 
 from src.excel_processors.excel_sync import SynchronizedExcelProcessor
+from src.calculator.kpi_calculator import KpiCalculator
 from src.scraper import Scraper
 import settings
 

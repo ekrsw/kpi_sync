@@ -1,5 +1,6 @@
 import logging
 from src.controller import sync_processor
+from src.calculator.kpi_calculator import KpiCalculator
 import time
 
 import settings
@@ -25,7 +26,23 @@ if __name__ == '__main__':
     
     start = time.time()
     result = sync_processor()
-    print("総着信数", result['TEMPLATE_TVS']['total_calls'])
+    kpi_calculator = KpiCalculator(result)
+    
+    for k, v in result.items():
+        print(f"{k}: {v}")
+    
+    print("総着信数: ", kpi_calculator.total_calls('TVS'))
+    print("自動音声ガイダンス途中切断数: ", kpi_calculator.ivr_interruptions('TVS'))
+    print("オペレーター呼出途中放棄数: ", kpi_calculator.abandoned_during_operator('TVS'))
+    print("留守電数: ", kpi_calculator.voicemails('TVS'))
+    print("留守電放棄件数: ", kpi_calculator.abandoned_in_ivr('TVS'))
+    print("放棄呼数: ", kpi_calculator.abandoned_calls('TVS'))
+    print("応答件数: ", kpi_calculator.responses('TVS'))
+    print("応答率: ", kpi_calculator.response_rate('TVS'))
+    print("電話問い合わせ件数: ", kpi_calculator.phone_inquiries('TVS'))
+    print("直受け対応件数: ", kpi_calculator.direct_handling('TVS'))
+    
+
     end = time.time()
     time_diff = end - start
     logger.info(f"処理が正常に終了しました。（処理時間: {time_diff} 秒）")
