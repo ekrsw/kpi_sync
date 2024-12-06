@@ -2,14 +2,22 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import threading
 
-from src.excel_sync import SynchronizedExcelProcessor
+from src.excel_processors.excel_sync import SynchronizedExcelProcessor
 from src.scraper import Scraper
 import settings
 
 
 logger = logging.getLogger(__name__)
 
-def sync_process_controller():
+def sync_processor() -> dict:
+    """
+    Excelファイルの処理とスクレイピング処理を同期的に実行する。
+    
+    Returns
+    -------
+    dict
+        処理結果を格納した辞書型オブジェクト
+    """
     stop_event = threading.Event()
 
     excel_processor = SynchronizedExcelProcessor(
@@ -57,3 +65,15 @@ def sync_process_controller():
         except Exception as e:
             logger.error(f"エラーが発生しました。: {e}")
             stop_event.set()
+
+def kpi_calculator(results: dict) -> dict:
+    """
+    KPIを計算する。
+    """
+    return results
+
+def operator_calculator(results: dict) -> dict:
+    """
+    オペレーター別のKPIを計算する。
+    """
+    return results
