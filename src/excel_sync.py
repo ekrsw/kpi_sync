@@ -36,10 +36,22 @@ class SynchronizedExcelProcessor:
         self.retry_delay = retry_delay
         self.refresh_interval = refresh_interval
 
-    def process_file(self, file_path, stop_event):
+    def process_file(self, file_path, stop_event) -> dict:
         """
         このクラスのメインのメソッド。
         これを実行するだけ。
+
+        Parameters
+        ----------
+        file_path : str
+            処理するExcelファイルのパス。
+        stop_event : threading.Event
+            処理を停止するためのイベント。
+        
+        Returns
+        -------
+        dict
+            ファイルの処理結果。
         """
         self._sync_file(file_path, stop_event)
 
@@ -62,7 +74,7 @@ class SynchronizedExcelProcessor:
             logger.error(f"ファイル名がPathに含まれていません。{file_path}")
 
     
-    def _sync_file(self, file_path, stop_event):
+    def _sync_file(self, file_path, stop_event) -> None:
         """
         個別のExcelファイルを処理します。
 
@@ -147,7 +159,15 @@ class SynchronizedExcelProcessor:
         return excel_app
     
     @staticmethod
-    def check_and_close(file_names):
+    def check_and_close(file_names: List[str]) -> None:
+        """
+        指定されたExcelファイルが開かれているかを確認し、開かれている場合はExcelアプリケーションを強制終了します。
+        
+        Parameters
+        ----------
+        file_names : List[str]
+            確認するExcelファイルのパスのリスト。
+        """
         for file_name in file_names:
             try:
                 with open(file_name, "r+b"):

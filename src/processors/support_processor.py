@@ -7,9 +7,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SupportProcessor(BaseProcessor):
-    def process(self):
+    def process(self) -> dict:
         """
         Supportファイルのデータを指定された条件でフィルタリングおよび整形します。
+
+        Returns
+        -------
+        dict
+            Supportファイルのデータを指定された条件でフィルタリングおよび整形した結果。
         """
         result = {}
 

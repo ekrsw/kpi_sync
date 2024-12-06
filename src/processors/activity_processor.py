@@ -6,15 +6,25 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+# シリアル値の定義
 TOWENTY_MINUTES = settings.SERIAL_20_MINUTES
 THIRTY_MINUTES = settings.SERIAL_30_MINUTES
 FORTY_MINUTES = settings.SERIAL_40_MINUTES
 SIXTY_MINUTES = settings.SERIAL_60_MINUTES
 
 class ActivityProcessor(BaseProcessor):
-    def process(self):
+    def process(self) -> dict:
         """
         Activityファイルのデータを指定された条件でフィルタリングおよび整形します。
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        dict
+            活動データのフィルタリングおよび整形結果
         """
         df = self.df.copy()
         result = {}
@@ -24,18 +34,18 @@ class ActivityProcessor(BaseProcessor):
 
             # 件名に「【受付】」が含まれていないもののみ残す
             df = df[~df['件名'].str.contains('【受付】', na=False)]
-            logger.info(f"Filtered out rows containing '【受付】'. Remaining rows: {df.shape[0]}")
+            logger.info(f"'【受付】'が含まれるカラムを削除しています。 Remaining rows: {df.shape[0]}")
 
             # 日付範囲でフィルタリング
             start_date = datetime.date.today()
             end_date = datetime.date.today()
             df = self.filtered_by_date_range(df, '登録日時 (関連) (サポート案件)', start_date, end_date)
-            logger.info(f"Filtered DataFrame by date range {start_date} to {end_date}. Remaining rows: {df.shape[0]}")
+            logger.info(f"指定された日付範囲でフィルタリングしています。 Remaining rows: {df.shape[0]}")
 
             # 案件番号でソートし、最も早い日時を残して重複を削除
             df = df.sort_values(by=['案件番号 (関連) (サポート案件)', '登録日時'])
             df = df.drop_duplicates(subset='案件番号 (関連) (サポート案件)', keep='first')
-            logger.info(f"Sorted and dropped duplicates. Remaining rows: {df.shape[0]}")
+            logger.info(f"案件番号でソートし、最も早い日時のデータを残して重複を削除しています。 Remaining rows: {df.shape[0]}")
 
             # '登録日時'と'登録日時 (関連) (サポート案件)'をdatetime型に変換
             # self.df['登録日時'] = pd.to_datetime(self.df['登録日時'], unit='d', origin='1899-12-30')
@@ -44,11 +54,12 @@ class ActivityProcessor(BaseProcessor):
             # 時間差を計算
             df['時間差'] = df['登録日時'] - df['登録日時 (関連) (サポート案件)']
             df['時間差'] = df['時間差'].fillna(0.0)
-            logger.info("Calculated '時間差' column.")
+            logger.info("'時間差'を計算しています。")
 
             # 受付タイプが折返しor留守電のものを抽出
             _df_ss_tvs_kmn = df[(df['受付タイプ (関連) (サポート案件)'] == '折返し') | (df['受付タイプ (関連) (サポート案件)'] == '留守電')]
             _df_hhd = df[(df['受付タイプ (関連) (サポート案件)'] == 'HHD入電（折返し）') | (df['受付タイプ (関連) (サポート案件)'] == '留守電')]
+            logger.info(f"受付タイプが'折返し'または'留守電'のデータを抽出しています。")
 
             df_ss = _df_ss_tvs_kmn[(_df_ss_tvs_kmn['サポート区分 (関連) (サポート案件)'] == 'SS')]
             df_tvs = _df_ss_tvs_kmn[(_df_ss_tvs_kmn['サポート区分 (関連) (サポート案件)'] == 'TVS')]
@@ -70,7 +81,24 @@ class ActivityProcessor(BaseProcessor):
         logger.debug(f"活動処理結果： {result}")
         return result
     
-    def waiting_for_callback(self, start_date, end_date):
+    def waiting_for_callback(self,
+                             start_date: datetime.date,
+                             end_date: datetime.date) -> dict:
+        """
+        滞留案件をクループ別、滞留時間別に集計し、案件リストを文字列として作成。
+        辞書に格納して返却する。
+        
+        Parameters
+        ----------
+        start_date : datetime.date  
+            集計開始日
+        end_date : datetime.date
+            集計終了日
+        
+        Returns
+        -------
+        dict
+        """
         df = self.df.copy()
         # 受付けタイプ「直受け」「折返し」「留守電」のみ残す
         df = df[(df['受付タイプ (関連) (サポート案件)'] == '折返し') | (df['受付タイプ (関連) (サポート案件)'] == '留守電')]
@@ -153,7 +181,7 @@ class ActivityProcessor(BaseProcessor):
         }
         return result
     
-    def group_activities_by_callback_duration(self, df):
+    def group_activities_by_callback_duration(self, df: pd.DataFrame) -> tuple:
         cb_0_20 = df[(df['時間差'] <= TOWENTY_MINUTES)].shape[0]
         cb_20_30 = df[(df['時間差'] > TOWENTY_MINUTES) & (df['時間差'] <= THIRTY_MINUTES)].shape[0]
         cb_30_40 = df[(df['時間差'] > THIRTY_MINUTES) & (df['時間差'] <= FORTY_MINUTES)].shape[0]
@@ -165,7 +193,7 @@ class ActivityProcessor(BaseProcessor):
     
     
     
-    def convert_to_pending_num(self, df):
+    def convert_to_pending_num(self, df: pd.DataFrame) -> tuple:
         wfc_over_20 = df[df['お待たせ時間'] >= TOWENTY_MINUTES]
         wfc_over30 = df[df['お待たせ時間'] >= THIRTY_MINUTES]
         wfc_over40 = df[df['お待たせ時間'] >= FORTY_MINUTES]
@@ -173,7 +201,7 @@ class ActivityProcessor(BaseProcessor):
 
         return wfc_over_20, wfc_over30, wfc_over40, wfc_over60
     
-    def callback_classification_by_group(self, df):
+    def callback_classification_by_group(self, df: pd.DataFrame) -> tuple:
         df_cb_0_20 = df[(df['時間差'] <= TOWENTY_MINUTES)]
         df_cb_20_30 = df[(df['時間差'] > TOWENTY_MINUTES) & (df['時間差'] <= THIRTY_MINUTES)]
         df_cb_30_40 = df[(df['時間差'] > THIRTY_MINUTES) & (df['時間差'] <= FORTY_MINUTES)]
@@ -183,7 +211,7 @@ class ActivityProcessor(BaseProcessor):
 
         return df_cb_0_20, df_cb_20_30, df_cb_30_40, df_cb_40_60, df_cb_60over, df_cb_not_include
     
-    def create_wfc_list(self, df) -> str:
+    def create_wfc_list(self, df: pd.DataFrame) -> str:
         _ = list(df.loc[:, '案件番号 (関連) (サポート案件)'])
         l = map(lambda x: str(x), _)
         return ','.join(l)

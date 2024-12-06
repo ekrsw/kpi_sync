@@ -10,7 +10,7 @@ class BaseProcessor:
         self.file_path = file_path
         self.df = pd.DataFrame()
 
-    def load_data(self):
+    def load_data(self) -> None:
         """
         Excelファイルを読み込み、DataFrameに格納します。
         """
@@ -21,7 +21,7 @@ class BaseProcessor:
             logger.error(f"Failed to load {self.file_path}: {e}")
             raise
 
-    def save_data(self, output_file: str):
+    def save_data(self, output_file: str) -> None:
         """
         DataFrameをExcelファイルとして保存します。
         """
@@ -32,21 +32,33 @@ class BaseProcessor:
             logger.error(f"Failed to save data to {output_file}: {e}")
             raise
 
-    def process(self):
+    def process(self) -> None:
         """
         データ処理のメインメソッド。各サブクラスでオーバーライドします。
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def filtered_by_date_range(self, df: pd.DataFrame, date_column: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
+    def filtered_by_date_range(self, df: pd.DataFrame,
+                               date_column: str,
+                               start_date: datetime.date,
+                               end_date: datetime.date) -> pd.DataFrame:
         """
         start_dateからend_dateの範囲のデータを抽出
 
-        :param df: フィルタリング対象のDataFrame
-        :param date_column: 登録日時のカラム名
-        :param start_date: 抽出開始日
-        :param end_date: 抽出終了日
-        :return: フィルタリング後のDataFrame
+        Parameters
+        ----------
+        df : pd.DataFrame
+            フィルタリング対象のDataFrame
+        date_column : str
+            フィルタリング対象の日付カラム名
+        start_date : datetime.date
+            抽出開始日
+        end_date : datetime.date
+            抽出終了日
+        
+        Returns
+        -------
+        pd.DataFrame
         """
         start_date_serial = self.datetime_to_serial(datetime.datetime.combine(start_date, datetime.time.min))
         end_date_serial = self.datetime_to_serial(datetime.datetime.combine(end_date + datetime.timedelta(days=1), datetime.time.min))
@@ -59,11 +71,18 @@ class BaseProcessor:
         logger.debug(f"Filtered DataFrame from {start_date} to {end_date}: {filtered_df.shape[0]} rows")
         return filtered_df
     
-    def current_time_to_serial(self, base_date=datetime.datetime(1899, 12, 30)):
+    def current_time_to_serial(self, base_date=datetime.datetime(1899, 12, 30)) -> float:
         """
         現在日時をシリアル値に変換する。
 
-        :return: シリアル値
+        Parameters
+        ----------
+        base_date : datetime.datetime
+            シリアル値の基準日（デフォルトは1899年12月30日）
+        
+        Returns
+        -------
+        float
         """
         current_time = datetime.datetime.now()
         serial_value = (current_time - base_date).total_seconds() / (24 * 60 * 60)
@@ -74,9 +93,16 @@ class BaseProcessor:
         """
         datetimeオブジェクトをシリアル値に変換する。
 
-        :param dt: 変換するdatetimeオブジェクト
-        :param base_date: シリアル値の基準日（デフォルトは1899年12月30日）
-        :return: シリアル値
+        Parameters
+        ----------
+        dt : datetime.datetime
+            変換するdatetimeオブジェクト
+        base_date : datetime.datetime
+            シリアル値の基準日（デフォルトは1899年12月30日）
+        
+        Returns
+        -------
+        float
         """
         dt = datetime.datetime(dt.year, dt.month, dt.day)
         return (dt - base_date).total_seconds() / (24 * 60 * 60)
@@ -86,8 +112,15 @@ class BaseProcessor:
         """
         シリアル値をdatetimeオブジェクトに変換する。
 
-        :param serial: 変換するシリアル値
-        :param base_date: シリアル値の基準日（デフォルトは1899年12月30日）
-        :return: datetimeオブジェクト
+        Parameters
+        ----------
+        serial : float
+            変換するシリアル値
+        base_date : datetime.datetime
+            シリアル値の基準日（デフォルトは1899年12月30日）
+        
+        Returns
+        -------
+        datetime.datetime
         """
         return base_date + datetime.timedelta(days=serial)
