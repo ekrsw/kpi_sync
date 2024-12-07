@@ -92,6 +92,74 @@ class KpiCalculator:
         """ 24_お待たせ20分以内累計対応件数 (int): 21 + 23 """
         return self.direct_handling(group) + self.callback_count_0_to_20_min(group)
     
+    def callback_count_20_to_30_min(self, group: str) -> int:
+        """ 25_お待たせ20分～30分対応件数 (int): """
+        if group == 'SS':
+            return self.data['cb_20_30_ss']
+        elif group == 'TVS':
+            return self.data['cb_20_30_tvs']
+        elif group == 'KMN':
+            return self.data['cb_20_30_kmn']
+        elif group == 'HHD':
+            return self.data['cb_20_30_hhd']
+        else:
+            logger.error(f"グループが存在しません。: {group}")
+            raise ValueError(f"グループが存在しません。: {group}")
+    
+    def cumulative_callback_under_30_min(self, group: str) -> int:
+        """ 26_お待たせ30分以内累計対応件数 (int): 24 + 25 """
+        return self.cumulative_callback_under_20_min(group) + self.callback_count_20_to_30_min(group)
+    
+    def callback_count_30_to_40_min(self, group: str) -> int:
+        """ 27_お待たせ30分～40分対応件数 (int) """
+        if group == 'SS':
+            return self.data['cb_30_40_ss']
+        elif group == 'TVS':
+            return self.data['cb_30_40_tvs']
+        elif group == 'KMN':
+            return self.data['cb_30_40_kmn']
+        elif group == 'HHD':
+            return self.data['cb_30_40_hhd']
+        else:
+            logger.error(f"グループが存在しません。: {group}")
+            raise ValueError(f"グループが存在しません。: {group}")
+        
+    def cumulative_callback_under_40_min(self, group: str) -> int:
+        """ 28_お待たせ40分以内累計対応件数 (int): 26 + 27 """
+        return self.cumulative_callback_under_30_min(group) + self.callback_count_30_to_40_min(group)
+    
+    def callback_count_40_to_60_min(self, group: str) -> int:
+        """ 29_お待たせ40分～60分対応件数 (int) """
+        if group == 'SS':
+            return self.data['cb_40_60_ss']
+        elif group == 'TVS':
+            return self.data['cb_40_60_tvs']
+        elif group == 'KMN':
+            return self.data['cb_40_60_kmn']
+        elif group == 'HHD':
+            return self.data['cb_40_60_hhd']
+        else:
+            logger.error(f"グループが存在しません。: {group}")
+            raise ValueError(f"グループが存在しません。: {group}")
+    
+    def cumulative_callback_under_60_min(self, group: str) -> int:
+        """ 30_お待たせ60分以内累計対応件数 (int): 28 + 29 """
+        return self.cumulative_callback_under_40_min(group) + self.callback_count_40_to_60_min(group)
+    
+    def callback_count_over_60_min(self, group: str) -> int:
+        """ 31_お待たせ60分以上対応件数 (int) """
+        if group == 'SS':
+            return self.data['cb_60over_ss']
+        elif group == 'TVS':
+            return self.data['cb_60over_tvs']
+        elif group == 'KMN':
+            return self.data['cb_60over_kmn']
+        elif group == 'HHD':
+            return self.data['cb_60over_hhd']
+        else:
+            logger.error(f"グループが存在しません。: {group}")
+            raise ValueError(f"グループが存在しません。: {group}")
+    
     def _select_template(self, group: str) -> dict:
         if group == 'SS':
             return 'TEMPLATE_SS'
