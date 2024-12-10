@@ -67,7 +67,7 @@ def collect_data() -> dict:
             logger.error(f"エラーが発生しました。: {e}")
             stop_event.set()
 
-def calculate_kpi_for_all_groups(data: dict) -> dict:
+def calculate_group_kpis_for_all_groups(data: dict) -> dict:
     """
     KPIを計算する。
     """
@@ -80,7 +80,7 @@ def calculate_kpi_for_all_groups(data: dict) -> dict:
 
     return results
 
-def operator_calculator(results: dict) -> dict:
+def calculate_operator_kpis(results: dict) -> dict:
     """
     オペレーター別のKPIを計算する。
     """
@@ -88,8 +88,8 @@ def operator_calculator(results: dict) -> dict:
 
 def orchestrate_workflow():
     results = collect_data()
-    kpi_results = calculate_kpi_for_all_groups(results)
-    print('SS_総着信数', kpi_results['SS']['総着信数'])
-    print('SS_直受け率', kpi_results['SS']['直受け率'])
-    print('TVS_総着信数', kpi_results['TVS']['総着信数'])
+    kpi_results = calculate_group_kpis_for_all_groups(results)
+    for k, v in kpi_results.items():
+        for k2, v2 in v.items():
+            print(f"{k} {k2}: {v2}")
     
