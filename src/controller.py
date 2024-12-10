@@ -91,5 +91,5 @@ def orchestrate_workflow():
     kpi_results = calculate_group_kpis_for_all_groups(results)
     for k, v in kpi_results.items():
         for k2, v2 in v.items():
-            print(f"{k} {k2}: {v2}")
+            logger.info(f"{k} {k2}: {v2}")
     
