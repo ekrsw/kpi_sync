@@ -211,10 +211,8 @@ class ActivityProcessor(BaseProcessor):
 
         return df_cb_0_20, df_cb_20_30, df_cb_30_40, df_cb_40_60, df_cb_60over, df_cb_not_include
     
-    def create_wfc_list(self, df: pd.DataFrame) -> str:
-        _ = list(df.loc[:, '案件番号 (関連) (サポート案件)'])
-        l = map(lambda x: str(x), _)
-        return ','.join(l)
+    def create_wfc_list(self, df: pd.DataFrame) -> list:
+        return list(df.loc[:, '案件番号 (関連) (サポート案件)'])
 
     @staticmethod
     def datetime_to_serial(dt: datetime.datetime, base_date=datetime.datetime(1899, 12, 30)) -> float:
