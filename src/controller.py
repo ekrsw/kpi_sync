@@ -10,7 +10,7 @@ import settings
 
 logger = logging.getLogger(__name__)
 
-def sync_processor() -> dict:
+def collect_data() -> dict:
     """
     Excelファイルの処理とスクレイピング処理を同期的に実行する。
     
@@ -67,10 +67,17 @@ def sync_processor() -> dict:
             logger.error(f"エラーが発生しました。: {e}")
             stop_event.set()
 
-def kpi_calculator(results: dict) -> dict:
+def calculate_kpi_for_all_groups(data: dict) -> dict:
     """
     KPIを計算する。
     """
+    kpi_calculator = KpiCalculator(data)
+    results = {}
+    results['SS'] = kpi_calculator.get_all_metrics('SS')
+    results['TVS'] = kpi_calculator.get_all_metrics('TVS')
+    results['KMN'] = kpi_calculator.get_all_metrics('KMN')
+    results['HHD'] = kpi_calculator.get_all_metrics('HHD')
+
     return results
 
 def operator_calculator(results: dict) -> dict:
@@ -78,3 +85,11 @@ def operator_calculator(results: dict) -> dict:
     オペレーター別のKPIを計算する。
     """
     return results
+
+def orchestrate_workflow():
+    results = collect_data()
+    kpi_results = calculate_kpi_for_all_groups(results)
+    print('SS_総着信数', kpi_results['SS']['総着信数'])
+    print('SS_直受け率', kpi_results['SS']['直受け率'])
+    print('TVS_総着信数', kpi_results['TVS']['総着信数'])
+    

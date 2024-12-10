@@ -205,20 +205,56 @@ class KpiCalculator:
     
     def cumulative_callback_rate_under_20_min(self, group: str) -> float:
         """ 20分以内折返し率 (float) """
-        den = self.cumulative_callback_under_60_min + self.callback_count_over_60_min
+        den = self.cumulative_callback_under_60_min(group) + self.callback_count_over_60_min(group)
         return self._calc_rate(self.cumulative_callback_under_20_min(group), den + self.waiting_for_callback_count_over_20min(group))
     
     def cumulative_callback_rate_under_30_min(self, group: str) -> float:
         """ 30分以内折返し率 (float) """
-        den = self.cumulative_callback_under_60_min + self.callback_count_over_60_min
+        den = self.cumulative_callback_under_60_min(group) + self.callback_count_over_60_min(group)
         return self._calc_rate(self.cumulative_callback_under_30_min(group), den + self.waiting_for_callback_count_over_30min(group))
     
     def cumulative_callback_rate_under_40_min(self, group: str) -> float:
         """ 40分以内折返し率 (float) """
-        den = self.cumulative_callback_under_60_min + self.callback_count_over_60_min
+        den = self.cumulative_callback_under_60_min(group) + self.callback_count_over_60_min(group)
         return self._calc_rate(self.cumulative_callback_under_40_min(group), den + self.waiting_for_callback_count_over_40min(group))
     
     def cumulative_callback_rate_under_60_min(self, group: str) -> float:
         """ 60分以内折返し率 (float) """
-        den = self.cumulative_callback_under_60_min + self.callback_count_over_60_min
+        den = self.cumulative_callback_under_60_min(group) + self.callback_count_over_60_min(group)
         return self._calc_rate(self.cumulative_callback_under_60_min(group), den + self.waiting_for_callback_count_over_60min(group))
+    
+    def get_all_metrics(self, group: str) -> dict:
+        return {
+            "総着信数": self.total_calls(group),
+            "自動音声ガイダンス途中切断数": self.ivr_interruptions(group),
+            "放棄呼数": self.abandoned_calls(group),
+            "オペレーター呼出途中放棄数": self.abandoned_during_operator(group),
+            "留守電放棄件数": self.abandoned_in_ivr(group),
+            "留守電数": self.voicemails(group),
+            "応答件数": self.responses(group),
+            "応答率": self.response_rate(group),
+            "電話問い合わせ件数": self.phone_inquiries(group),
+            "直受け対応件数": self.direct_handling(group),
+            "直受け率": self.direct_handling_rate(group),
+            "お待たせ0分～20分対応件数": self.callback_count_0_to_20_min(group),
+            "お待たせ20分以内累計対応件数": self.cumulative_callback_under_20_min(group),
+            "お待たせ20分～30分対応件数": self.callback_count_20_to_30_min(group),
+            "お待たせ30分以内累計対応件数": self.cumulative_callback_under_30_min(group),
+            "お待たせ30分～40分対応件数": self.callback_count_30_to_40_min(group),
+            "お待たせ40分以内累計対応件数": self.cumulative_callback_under_40_min(group),
+            "お待たせ40分～60分対応件数": self.callback_count_40_to_60_min(group),
+            "お待たせ60分以内累計対応件数": self.cumulative_callback_under_60_min(group),
+            "お待たせ60分以上対応件数": self.callback_count_over_60_min(group),
+            "お待たせ20分以上対応件数": self.waiting_for_callback_count_over_20min(group),
+            "お待たせ30分以上対応件数": self.waiting_for_callback_count_over_30min(group),
+            "お待たせ40分以上対応件数": self.waiting_for_callback_count_over_40min(group),
+            "お待たせ60分以上対応件数": self.waiting_for_callback_count_over_60min(group),
+            "お待たせ20分以上対応リスト": self.waiting_for_callback_list_over_20min(group),
+            "お待たせ30分以上対応リスト": self.waiting_for_callback_list_over_30min(group),
+            "お待たせ40分以上対応リスト": self.waiting_for_callback_list_over_40min(group),
+            "お待たせ60分以上対応リスト": self.waiting_for_callback_list_over_60min(group),
+            "20分以内折返し率": self.cumulative_callback_rate_under_20_min(group),
+            "30分以内折返し率": self.cumulative_callback_rate_under_30_min(group),
+            "40分以内折返し率": self.cumulative_callback_rate_under_40_min(group),
+            "60分以内折返し率": self.cumulative_callback_rate_under_60_min(group)
+        }
