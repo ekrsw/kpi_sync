@@ -114,7 +114,16 @@ class Base:
         tab_element_id : str
             選択するタブによって、"1" or "2"
         """
-        self.driver.find_element(By.ID, f'normal-title{tab_element_id}').click()
+        try:
+            element = self.driver.find_element(By.ID, f'normal-title{tab_element_id}')
+            if element:
+                element.click()
+                return True
+            else:
+                return False
+        except Exception as e:
+            logger.error(f"タブの切り替えに失敗しました。: {e}")
+            return False
     
     def create_dateframe(self, list_name: str) -> pd.DataFrame:
         """
@@ -178,26 +187,11 @@ class Scraper(Base):
                 retries = 0
                 while retries < settings.REPORTER_MAX_RETRIES and not stop_event.is_set():
                     try:
-                        self.call_template(template)
-                        self.create_report(element_id="0")
-                        time.sleep(1)
+                        if template == settings.TEMPLATE_OP:
+                            template_result = self.scrape_operator_analysis_data(template)
+                        else:
+                            template_result = self.scrape_group_analysis_data(template)
 
-                        df1 = self.create_dateframe('normal-list1-dummy-0')
-
-                        self.select_tabs(tab_element_id="2")
-                        self.create_report(element_id="1")
-                        time.sleep(1)
-
-                        df2 = self.create_dateframe('normal-list2-dummy-1')
-
-                        # 必要なデータを辞書に保存
-                        template_result = {
-                            "total_calls": int(df1.iloc[0, 0]), # 総着信数
-                            "IVR_interruptions_before_response": int(df1.iloc[0, 1]), # IVR応答前放棄呼数
-                            "ivr_interruptions": int(df1.iloc[0, 2]), # IVR切断数
-                            "time_out": int(df2.iloc[0, 0]), # タイムアウト数
-                            "abandoned_during_operator": int(df2.iloc[0, 1]) # ACD放棄呼数
-                        }
                         results[template] = template_result
                         break
 
@@ -215,3 +209,34 @@ class Scraper(Base):
         finally:
             self.close_driver()
             logger.debug("Web Driverを終了しました。")
+    
+    def scrape_group_analysis_data(self, template: str) -> dict:
+        self.call_template(template)
+        self.create_report(element_id="0")
+        time.sleep(1)
+        df1 = self.create_dateframe('normal-list1-dummy-0')
+
+        self.select_tabs(tab_element_id="2")
+        self.create_report(element_id="1")
+        time.sleep(1)
+        df2 = self.create_dateframe('normal-list2-dummy-1')
+
+        # 必要なデータを辞書に保存
+        template_result = {
+            "total_calls": int(df1.iloc[0, 0]), # 総着信数
+            "IVR_interruptions_before_response": int(df1.iloc[0, 1]), # IVR応答前放棄呼数
+            "ivr_interruptions": int(df1.iloc[0, 2]), # IVR切断数
+            "time_out": int(df2.iloc[0, 0]), # タイムアウト数
+            "abandoned_during_operator": int(df2.iloc[0, 1]) # ACD放棄呼数
+        }
+
+        return template_result
+
+    def scrape_operator_analysis_data(self, template: str) -> dict:
+        self.call_template(template)
+        self.create_report(element_id="0")
+        time.sleep(1)
+        df = self.create_dateframe('normal-list1-dummy-0')
+        
+        template_result = {}
+        return template_result

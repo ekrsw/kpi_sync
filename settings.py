@@ -1,3 +1,4 @@
+import datetime
 import os
 from dotenv import load_dotenv
 
@@ -11,14 +12,16 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE = "kpi_sync.log"
 LOG_LEVEL = "INFO"
 
-# Excelファイルの名前とパス
+# 各種ファイル名とパスの設定
 ACTIVITY_FILE_NAME = 'TS_todays_activity.xlsx'
 CLOSE_FILE_NAME = 'TS_todays_close.xlsx'
 SUPPORT_FILE_NAME = 'TS_todays_support.xlsx'
+SHIFT_SCHEDULE_NAME = f'{datetime.datetime.now().strftime('%Y%m')}_Campaign_ScheduleList.csv'
 
 ACTIVITY_FILE = os.path.join(BASE_DIR, 'data', ACTIVITY_FILE_NAME)
 CLOSE_FILE = os.path.join(BASE_DIR, 'data', CLOSE_FILE_NAME)
 SUPPORT_FILE = os.path.join(BASE_DIR, 'data', SUPPORT_FILE_NAME)
+SHIFT_SCHEDULE = os.path.join(BASE_DIR, 'data', 'shift_schedule', SHIFT_SCHEDULE_NAME)
 
 EXCEL_FILES = [ACTIVITY_FILE, CLOSE_FILE, SUPPORT_FILE]
 
@@ -42,4 +45,5 @@ TEMPLATE_SS = 'TEMPLATE_SS'
 TEMPLATE_TVS = 'TEMPLATE_TVS'
 TEMPLATE_KMN = 'TEMPLATE_KMN'
 TEMPLATE_HHD = 'TEMPLATE_HHD'
-TEMPLATES = [TEMPLATE_SS, TEMPLATE_TVS, TEMPLATE_KMN, TEMPLATE_HHD]
+TEMPLATE_OP = 'TEMPLATE_OP'
+TEMPLATES = [TEMPLATE_SS, TEMPLATE_TVS, TEMPLATE_KMN, TEMPLATE_HHD, TEMPLATE_OP]
