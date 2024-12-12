@@ -16,11 +16,13 @@ LOG_LEVEL = "INFO"
 ACTIVITY_FILE_NAME = 'TS_todays_activity.xlsx'
 CLOSE_FILE_NAME = 'TS_todays_close.xlsx'
 SUPPORT_FILE_NAME = 'TS_todays_support.xlsx'
+OPERATORS_FILE_NAME = 'operators.xlsx'
 SHIFT_SCHEDULE_NAME = f'{datetime.datetime.now().strftime('%Y%m')}_Campaign_ScheduleList.csv'
 
 ACTIVITY_FILE = os.path.join(BASE_DIR, 'data', ACTIVITY_FILE_NAME)
 CLOSE_FILE = os.path.join(BASE_DIR, 'data', CLOSE_FILE_NAME)
 SUPPORT_FILE = os.path.join(BASE_DIR, 'data', SUPPORT_FILE_NAME)
+OPERATORS_FILE = os.path.join(BASE_DIR, 'data', OPERATORS_FILE_NAME)
 SHIFT_SCHEDULE = os.path.join(BASE_DIR, 'data', 'shift_schedule', SHIFT_SCHEDULE_NAME)
 
 EXCEL_FILES = [ACTIVITY_FILE, CLOSE_FILE, SUPPORT_FILE]
