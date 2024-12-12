@@ -90,6 +90,7 @@ class Base:
             self.driver.find_element(By.ID, 'template-creation-btn').click()
         except Exception as e:
             logger.error(f"テンプレートの呼び出しに失敗しました。: {e}")
+            raise
 
     def create_report(self, element_id: str = "0"):
         """
@@ -104,6 +105,7 @@ class Base:
             self.driver.find_element(By.ID, f'panel-td-create-report-{element_id}').click()
         except Exception as e:
             logger.error(f"レポートの作成に失敗しました。: {e}")
+            raise
 
     def select_tabs(self, tab_element_id: str = "1"):
         """
@@ -237,6 +239,6 @@ class Scraper(Base):
         self.create_report(element_id="0")
         time.sleep(1)
         df = self.create_dateframe('normal-list1-dummy-0')
-        
+        print(df.index)
         template_result = {}
-        return template_result
+        return df
