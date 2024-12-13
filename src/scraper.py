@@ -239,6 +239,4 @@ class Scraper(Base):
         self.create_report(element_id="0")
         time.sleep(1)
         df = self.create_dateframe('normal-list1-dummy-0')
-        print(df.index)
-        template_result = {}
         return df

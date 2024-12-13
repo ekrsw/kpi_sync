@@ -4,6 +4,7 @@ import threading
 
 from src.excel_processors.excel_sync import SynchronizedExcelProcessor
 from src.calculator.kpi_calculator import KpiCalculator
+from src.calculator.operator_calculator import OperatorCalculator
 from src.scraper import Scraper
 import settings
 
@@ -84,7 +85,9 @@ def calculate_operator_kpis(results: dict) -> dict:
     """
     オペレーター別のKPIを計算する。
     """
-    return results
+    operator_calculator = OperatorCalculator(results['TEMPLATE_OP'])
+    
+    return None
 
 def orchestrate_workflow():
     results = collect_data()
