@@ -13,7 +13,7 @@ data/TS_todays_activity.xlsx
 data/TS_todays_close.xlsx
 data/TS_todays_support.xlsx
 data/operators.xlsx
-data/_operators.xlsx
+# data/_operators.xlsx
 data/shift_schedule/*
 
 # ログファイル
