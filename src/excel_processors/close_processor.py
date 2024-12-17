@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 class CloseProcessor(BaseProcessor):
     def process(self):
         df = self.df.copy()
-        result = {}
         try:
             logger.debug("クローズデータのフィルタリング、整形を開始します。")
             # 最初の3列をスキップし、5列目をインデックスとして設定します

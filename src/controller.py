@@ -1,7 +1,10 @@
+import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+import pandas as pd
 import threading
 
+from src.excel_processors.close_processor import CloseProcessor
 from src.excel_processors.excel_sync import SynchronizedExcelProcessor
 from src.calculator.kpi_calculator import KpiCalculator
 from src.calculator.operator_calculator import OperatorCalculator
@@ -81,13 +84,23 @@ def calculate_group_kpis_for_all_groups(data: dict) -> dict:
 
     return results
 
-def calculate_operator_kpis(results: dict) -> dict:
+def collect_and_calculate_operator_kpis(results: dict) -> dict:
     """
     オペレーター別のKPIを計算する。
     """
-    operator_calculator = OperatorCalculator(results['TEMPLATE_OP'])
+    df_ctstage = results['TEMPLATE_OP']
+
+    # クローズデータの取得 / 処理
+    close_processor = CloseProcessor(settings.CLOSE_FILE)
+    close_processor.load_data()
+    df_close = close_processor.process()
+
+    # シフトデータの取得 / 処理
     
-    return None
+
+    operator_calculator = OperatorCalculator(df_ctstage, df_close, df_shift)
+    df = operator_calculator.calculate()
+    return df
 
 def orchestrate_workflow():
     results = collect_data()
@@ -95,4 +108,6 @@ def orchestrate_workflow():
     for k, v in kpi_results.items():
         for k2, v2 in v.items():
             logger.info(f"{k} {k2}: {v2}")
+    
+    print(results['TEMPLATE_OP'])
     
