@@ -1,4 +1,4 @@
-from src.excel_processors.base import BaseProcessor
+from src.processors.base import BaseProcessor
 import pandas as pd
 import datetime
 import settings

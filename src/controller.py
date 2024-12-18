@@ -4,8 +4,8 @@ import logging
 import pandas as pd
 import threading
 
-from src.excel_processors.close_processor import CloseProcessor
-from src.excel_processors.excel_sync import SynchronizedExcelProcessor
+from src.processors.close_processor import CloseProcessor
+from src.processors.excel_sync import SynchronizedExcelProcessor
 from src.calculator.kpi_calculator import KpiCalculator
 from src.calculator.operator_calculator import OperatorCalculator
 from src.scraper import Scraper

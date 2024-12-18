@@ -56,7 +56,7 @@ class SynchronizedExcelProcessor:
         self._sync_file(file_path, stop_event)
 
         if settings.ACTIVITY_FILE in file_path:
-            from src.excel_processors.activity_processor import ActivityProcessor
+            from src.processors.activity_processor import ActivityProcessor
             activity = ActivityProcessor(file_path)
             activity.load_data()
             result = activity.process()
@@ -65,7 +65,7 @@ class SynchronizedExcelProcessor:
             result = {}
             return result
         elif settings.SUPPORT_FILE in file_path:
-            from src.excel_processors.support_processor import SupportProcessor
+            from src.processors.support_processor import SupportProcessor
             support = SupportProcessor(file_path)
             support.load_data()
             result = support.process()
