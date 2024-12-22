@@ -5,6 +5,7 @@ import pandas as pd
 import threading
 
 from src.processors.close_processor import CloseProcessor
+from src.processors.shift_processor import ShiftProcessor
 from src.processors.excel_sync import SynchronizedExcelProcessor
 from src.calculator.kpi_calculator import KpiCalculator
 from src.calculator.operator_calculator import OperatorCalculator
@@ -84,21 +85,45 @@ def calculate_group_kpis_for_all_groups(data: dict) -> dict:
 
     return results
 
-def collect_and_calculate_operator_kpis(results: dict) -> dict:
+def collect_and_calculate_operator_kpis(op_results: pd.DataFrame) -> dict:
     """
     オペレーター別のKPIを計算する。
     """
-    df_ctstage = results['TEMPLATE_OP']
-
-    # クローズデータの取得 / 処理
-    close_processor = CloseProcessor(settings.CLOSE_FILE)
-    close_processor.load_data()
-    df_close = close_processor.process()
-
-    # シフトデータの取得 / 処理
+    # CTStageデータの取得
+    try:
+        df_ctstage = op_results
+        logger.info("CTStageデータの取得に成功しました。")
+    except Exception as e:
+        logger.error(f"CTStageデータの取得に失敗しました。: {e}")
+        return
     
+    # クローズデータの取得 / 処理
+    try:
+        close_processor = CloseProcessor(settings.CLOSE_FILE)
+        close_processor.load_data()
+        df_close = close_processor.process()
+        logger.info("クローズデータの取得に成功しました。")
+    except Exception as e:
+        logger.error(f"クローズデータの取得に失敗しました。: {e}")
+        return
 
-    operator_calculator = OperatorCalculator(df_ctstage, df_close, df_shift)
+    # オペレーターのリストを取得
+    try:
+        df_operators = pd.read_excel(settings.OPERATORS_FILE)
+        logger.info("オペレーターデータの取得に成功しました。")
+    except Exception as e:
+        logger.error(f"オペレーターデータの取得に失敗しました。: {e}")
+        return
+    
+    # シフトデータの取得 / 処理
+    try:
+        df_shift = ShiftProcessor(df_operators, settings.SHIFT_SCHEDULE).process()
+        logger.info("シフトデータの取得に成功しました。")
+    except Exception as e:
+        logger.error(f"シフトデータの取得に失敗しました。: {e}")
+        return
+    
+    operator_calculator = OperatorCalculator(df_operators, df_ctstage, df_close, df_shift)
     df = operator_calculator.calculate()
     return df
 

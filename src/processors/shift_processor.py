@@ -23,17 +23,5 @@ class ShiftProcessor:
         df = df.drop(columns=["組織名", "従業員ID", "種別"])
         df_shift = df[[date_str]]
         df_shift.columns = ["シフト"]
-        df_shift.index = df_shift.index.map(self._replace_sweetname_to_name)
         
-        result = {}
-        for index, row in df_shift.iterrows():
-            result[index] = row["シフト"]
-        return result
-
-    def _replace_sweetname_to_name(self, name):
-        if name in self.sweet_to_name:
-            return self.sweet_to_name[name]
-        else:
-            logger.warning(f"'{name}'がOperaotrsファイルのSweetカラムに存在しません。")
-            return name
-
+        return df_shift
