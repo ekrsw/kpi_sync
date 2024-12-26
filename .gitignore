@@ -20,4 +20,5 @@ data/shift_schedule/*
 kpi_sync.log
 
 test.py
+test2.py
 test.xlsx

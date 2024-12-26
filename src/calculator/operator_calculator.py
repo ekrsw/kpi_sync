@@ -9,7 +9,7 @@ class OperatorCalculator:
     def __init__(self, df_operators, df_ctstage, df_close, df_shift) -> None:
         self.df_operators = df_operators
 
-        self.sweet_to_name = df_operators.set_index('Sweet')['氏名'].to_dict()
+        self.sweet_to_name = df_operators.dropna(subset=['Sweet']).set_index('Sweet')['氏名'].to_dict()
         self.ctstage_to_name = df_operators.set_index('CTStage')['氏名'].to_dict()
 
         df_ctstage.index = df_ctstage.index.map(self._replace_ctstage_to_name)
@@ -19,13 +19,15 @@ class OperatorCalculator:
         self.df_close = df_close
 
     def calculate(self) -> pd.DataFrame:
-        print(self.df_operators)
-        print(self.df_ctstage)
-        print(self.df_close)
-        print(self.df_shift)
-        for k, v in self.ctstage_to_name.items():
-            print(k, v)
-        return self.df_ctstage
+        """
+        オペレーター別のACW, ATT, CPHを計算する。
+        """
+        active_operators = self.df_operators[self.df_operators['active'] == 1]['氏名']
+        self.df_ctstage = self.df_ctstage[self.df_ctstage.index.isin(active_operators)]
+        self.df_close = self.df_close[self.df_close.index.isin(active_operators)]
+        self.df_shift = self.df_shift[self.df_shift.index.isin(active_operators)]
+       
+        print(self.sweet_to_name)
     
     def _float_to_hms(value: float) -> str:
         '''1日を1としたfloat型を'hh:mm:ss'形式の文字列に変換'''

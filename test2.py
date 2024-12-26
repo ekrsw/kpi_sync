@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 start = time.time()
 results = collect_data()
 df = collect_and_calculate_operator_kpis(results['TEMPLATE_OP'])
-print(df)
 
 end = time.time()
 time_diff = end - start
